@@ -6,4 +6,18 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig();
+export default defineConfig({
+  vite: {
+    optimizeDeps: {
+      // Pre-bundle these so dev doesn't re-optimize and force a reload mid-session,
+      // which can cause "Failed to fetch dynamically imported module" errors.
+      include: [
+        "lucide-react",
+        "sonner",
+        "@tanstack/router-core",
+        "@tanstack/router-core/ssr/client",
+        "seroval",
+      ],
+    },
+  },
+});
