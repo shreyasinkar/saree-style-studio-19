@@ -29,14 +29,21 @@ export const drapeSaree = createServerFn({ method: "POST" })
       "Drape in the classic Nivi style: neat pleats tucked at the waist, pallu over the LEFT shoulder.";
 
     const prompt =
-      "Take the person from the FIRST image and dress them in a saree made from the fabric/design shown in the SECOND image. " +
-      styleHint + " " +
-      "Match the colors, motifs, border, and texture of the saree fabric exactly from the second image. " +
-      "Include a matching blouse appropriate for the style. " +
-      "Keep the person's face, body, hair, skin tone and pose unchanged. " +
-      "Match the lighting, shadows and background of the original photo. " +
-      "Photorealistic, high resolution, full body if possible." +
-      (data.notes ? ` Additional notes: ${data.notes}` : "");
+      "TASK: Photorealistic virtual try-on. Take the person from the FIRST image and dress them in a saree made from the fabric shown in the SECOND image.\n\n" +
+      "=== CRITICAL DRAPING STYLE (MUST FOLLOW EXACTLY) ===\n" +
+      styleHint + "\n" +
+      "The draping style above is the MOST IMPORTANT requirement. Do NOT default to a generic Nivi drape unless that is what was requested. " +
+      "The pleat placement, pallu direction, shoulder used, and overall silhouette MUST visibly match the described regional style. " +
+      "If the style says NO pleats, do not add pleats. If it says front pallu, the pallu must spread across the chest. " +
+      "If it says dhoti-style (Nauvari), the saree must be drawn between the legs like a dhoti with no petticoat showing.\n\n" +
+      "=== FABRIC ===\n" +
+      "Use the EXACT colors, motifs, border pattern, and texture of the fabric from the SECOND image. Include a matching blouse appropriate for the chosen drape style.\n\n" +
+      "=== PRESERVE FROM ORIGINAL ===\n" +
+      "Keep the person's face, identity, body shape, hair, skin tone, and pose UNCHANGED. " +
+      "Match the original lighting direction, shadows, and background exactly.\n\n" +
+      "=== OUTPUT ===\n" +
+      "Photorealistic, high resolution, sharp fabric detail, natural fabric folds and shadows, full body framing if possible." +
+      (data.notes ? `\n\nAdditional notes: ${data.notes}` : "");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
