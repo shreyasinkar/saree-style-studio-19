@@ -83,7 +83,7 @@ export const drapeSaree = createServerFn({ method: "POST" })
     });
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
@@ -100,12 +100,9 @@ export const drapeSaree = createServerFn({ method: "POST" })
       if (response.status === 403) {
         throw new Error("Invalid Gemini API key. Please check your GEMINI_API_KEY.");
       }
-      if (response.status === 404) {
-        throw new Error("Gemini image model unavailable. Please update the model configuration.");
-      }
       const text = await response.text().catch(() => "");
       console.error("Gemini API error:", response.status, text);
-      throw new Error("Failed to generate draped image. Please try again.");
+      throw new Error(`Gemini API error ${response.status}: ${text.slice(0, 200)}`);
     }
 
     const json = await response.json() as {
