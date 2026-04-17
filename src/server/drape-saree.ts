@@ -7,6 +7,25 @@ type DrapeInput = {
   notes?: string;
 };
 
+function base64ToGenerativePart(base64Data: string, mimeType: string) {
+  // Strip data URL prefix if present (e.g. "data:image/jpeg;base64,")
+  const base64 = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
+  return {
+    inline_data: {
+      mime_type: mimeType,
+      data: base64,
+    },
+  };
+}
+
+function getMimeType(dataUrl: string): string {
+  if (dataUrl.startsWith("data:")) {
+    const match = dataUrl.match(/data:([^;]+);/);
+    if (match) return match[1];
+  }
+  return "image/jpeg"; // default fallback
+}
+
 export const drapeSaree = createServerFn({ method: "POST" })
   .inputValidator((input: DrapeInput) => {
     if (!input?.userImage || typeof input.userImage !== "string") {
@@ -21,7 +40,7 @@ export const drapeSaree = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("AI service not configured");
 
     const styleHint =
@@ -45,54 +64,67 @@ export const drapeSaree = createServerFn({ method: "POST" })
       "Photorealistic, high resolution, sharp fabric detail, natural fabric folds and shadows, full body framing if possible." +
       (data.notes ? `\n\nAdditional notes: ${data.notes}` : "");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: data.userImage } },
-              { type: "image_url", image_url: { url: data.sareeImage } },
-            ],
+    const userMime = getMimeType(data.userImage);
+    const sareeMime = getMimeType(data.sareeImage);
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                base64ToGenerativePart(data.userImage, userMime),
+                base64ToGenerativePart(data.sareeImage, sareeMime),
+              ],
+            },
+          ],
+          generationConfig: {
+            responseModalities: ["IMAGE", "TEXT"],
           },
-        ],
-        modalities: ["image", "text"],
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
       if (response.status === 429) {
         throw new Error("Too many requests. Please wait a moment and try again.");
       }
-      if (response.status === 402) {
-        throw new Error("AI credits exhausted. Please add credits to continue.");
+      if (response.status === 403) {
+        throw new Error("Invalid Gemini API key. Please check your GEMINI_API_KEY.");
       }
       const text = await response.text().catch(() => "");
-      console.error("AI gateway error:", response.status, text);
+      console.error("Gemini API error:", response.status, text);
       throw new Error("Failed to generate draped image. Please try again.");
     }
 
-    const json = (await response.json()) as {
-      choices?: Array<{
-        message?: {
-          content?: string;
-          images?: Array<{ image_url?: { url?: string } }>;
+    const json = await response.json() as {
+      candidates?: Array<{
+        content?: {
+          parts?: Array<{
+            text?: string;
+            inlineData?: { mimeType?: string; data?: string };
+          }>;
         };
       }>;
     };
 
-    const imageUrl = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!imageUrl) {
-      console.error("No image returned from AI", JSON.stringify(json).slice(0, 500));
+    // Extract the generated image from Gemini response
+    const parts = json.candidates?.[0]?.content?.parts ?? [];
+    const imagePart = parts.find((p) => p.inlineData?.data);
+
+    if (!imagePart?.inlineData?.data) {
+      console.error("No image returned from Gemini", JSON.stringify(json).slice(0, 500));
       throw new Error("AI did not return an image. Please try a different photo.");
     }
+
+    const mimeType = imagePart.inlineData.mimeType ?? "image/png";
+    const imageUrl = `data:${mimeType};base64,${imagePart.inlineData.data}`;
 
     return { image: imageUrl };
   });
