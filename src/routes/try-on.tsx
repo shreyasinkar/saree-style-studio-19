@@ -289,12 +289,15 @@ function UploadStep({ userImage, onPick, onContinue }: {
 }
 
 function SareeStep({
-  userImage, selectedSaree, customSaree, onSelect, onUploadSaree, onBack, onGenerate,
+  userImage, selectedSaree, customSaree, drapeStyle,
+  onSelect, onSelectStyle, onUploadSaree, onBack, onGenerate,
 }: {
   userImage: string | null;
   selectedSaree: Saree | null;
   customSaree: string | null;
+  drapeStyle: DrapeStyle;
   onSelect: (s: Saree) => void;
+  onSelectStyle: (s: DrapeStyle) => void;
   onUploadSaree: () => void;
   onBack: () => void;
   onGenerate: () => void;
@@ -304,10 +307,41 @@ function SareeStep({
     <div>
       <div className="text-center mb-8">
         <h1 className="font-display text-4xl md:text-5xl font-bold text-primary">
-          Choose your saree
+          Choose your saree & style
         </h1>
         <p className="mt-3 text-muted-foreground">
-          Pick from our collection or upload your own saree image.
+          Pick a saree and the draping style you want.
+        </p>
+      </div>
+
+      {/* Drape style picker */}
+      <div className="mb-8">
+        <p className="text-xs uppercase tracking-widest text-gold mb-3 text-center">
+          Draping style
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {DRAPE_STYLES.map((s) => {
+            const active = drapeStyle.id === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => onSelectStyle(s)}
+                title={s.description}
+                className={`rounded-full px-4 py-2 text-sm font-medium border transition-all
+                  ${active
+                    ? "bg-primary text-primary-foreground border-primary shadow-elegant"
+                    : "bg-card text-foreground border-border hover:border-primary hover:bg-primary/5"}`}
+              >
+                <span className="flex items-center gap-1.5">
+                  {active && <Check className="h-3.5 w-3.5" />}
+                  {s.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-center text-xs text-muted-foreground max-w-xl mx-auto">
+          <span className="font-medium text-foreground">{drapeStyle.region}</span> · {drapeStyle.description}
         </p>
       </div>
 
