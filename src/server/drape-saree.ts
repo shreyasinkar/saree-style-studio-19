@@ -67,27 +67,29 @@ export const drapeSaree = createServerFn({ method: "POST" })
     const userMime = getMimeType(data.userImage);
     const sareeMime = getMimeType(data.sareeImage);
 
+    const requestBody = JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            base64ToGenerativePart(data.userImage, userMime),
+            base64ToGenerativePart(data.sareeImage, sareeMime),
+          ],
+        },
+      ],
+      generationConfig: {
+        responseModalities: ["IMAGE", "TEXT"],
+      },
+    });
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                base64ToGenerativePart(data.userImage, userMime),
-                base64ToGenerativePart(data.sareeImage, sareeMime),
-              ],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ["IMAGE", "TEXT"],
-          },
-        }),
+        body: requestBody,
       }
     );
 
@@ -97,6 +99,9 @@ export const drapeSaree = createServerFn({ method: "POST" })
       }
       if (response.status === 403) {
         throw new Error("Invalid Gemini API key. Please check your GEMINI_API_KEY.");
+      }
+      if (response.status === 404) {
+        throw new Error("Gemini image model unavailable. Please update the model configuration.");
       }
       const text = await response.text().catch(() => "");
       console.error("Gemini API error:", response.status, text);
