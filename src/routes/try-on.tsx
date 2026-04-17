@@ -4,6 +4,7 @@ import { Camera, Upload, Sparkles, Download, RotateCcw, Loader2, Check } from "l
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SAREES, type Saree } from "@/lib/sarees";
+import { DRAPE_STYLES, type DrapeStyle } from "@/lib/drape-styles";
 import { drapeSaree } from "@/server/drape-saree";
 import { toast } from "sonner";
 
@@ -54,6 +55,7 @@ function TryOnPage() {
     search.saree ? SAREES.find((s) => s.id === search.saree) ?? null : null,
   );
   const [customSaree, setCustomSaree] = useState<string | null>(null);
+  const [drapeStyle, setDrapeStyle] = useState<DrapeStyle>(DRAPE_STYLES[0]);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const userInputRef = useRef<HTMLInputElement>(null);
@@ -101,7 +103,9 @@ function TryOnPage() {
     setLoading(true);
     setStep(3);
     try {
-      const res = await drapeSaree({ data: { userImage, sareeImage: sareeData } });
+      const res = await drapeSaree({
+        data: { userImage, sareeImage: sareeData, styleHint: drapeStyle.promptHint },
+      });
       setResult(res.image);
       setStep(4);
       toast.success("Your drape is ready!");
@@ -147,6 +151,8 @@ function TryOnPage() {
               userImage={userImage}
               selectedSaree={selectedSaree}
               customSaree={customSaree}
+              drapeStyle={drapeStyle}
+              onSelectStyle={setDrapeStyle}
               onSelect={(s) => { setSelectedSaree(s); setCustomSaree(null); }}
               onUploadSaree={() => sareeInputRef.current?.click()}
               onBack={() => setStep(1)}
