@@ -1,7 +1,41 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
+
+// Auto-recover from stale dynamic-import chunks (common in dev when Vite
+// re-optimizes deps). Reloads the page once instead of leaving a broken UI.
+function useStaleChunkRecovery() {
+  useEffect(() => {
+    const KEY = "__chunk_reload_at";
+    const onError = (msg: string) => {
+      if (
+        msg.includes("Failed to fetch dynamically imported module") ||
+        msg.includes("Importing a module script failed") ||
+        msg.includes("error loading dynamically imported module")
+      ) {
+        const last = Number(sessionStorage.getItem(KEY) || "0");
+        if (Date.now() - last > 10_000) {
+          sessionStorage.setItem(KEY, String(Date.now()));
+          window.location.reload();
+        }
+      }
+    };
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const reason = e.reason;
+      const msg = typeof reason === "string" ? reason : reason?.message ?? "";
+      onError(String(msg));
+    };
+    const onWindowError = (e: ErrorEvent) => onError(e.message ?? "");
+    window.addEventListener("unhandledrejection", onRejection);
+    window.addEventListener("error", onWindowError);
+    return () => {
+      window.removeEventListener("unhandledrejection", onRejection);
+      window.removeEventListener("error", onWindowError);
+    };
+  }, []);
+}
 
 function NotFoundComponent() {
   return (
@@ -69,6 +103,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useStaleChunkRecovery();
   return (
     <>
       <Outlet />
