@@ -94,13 +94,13 @@ export const drapeSaree = createServerFn({ method: "POST" })
     );
 
     if (!response.ok) {
+      const text = await response.text().catch(() => "");
       if (response.status === 429) {
-        throw new Error("Too many requests. Please wait a moment and try again.");
+        throw new Error(`Gemini API rate limit/quota hit (429): ${text.slice(0, 200)}`);
       }
       if (response.status === 403) {
         throw new Error("Invalid Gemini API key. Please check your GEMINI_API_KEY.");
       }
-      const text = await response.text().catch(() => "");
       console.error("Gemini API error:", response.status, text);
       throw new Error(`Gemini API error ${response.status}: ${text.slice(0, 200)}`);
     }
