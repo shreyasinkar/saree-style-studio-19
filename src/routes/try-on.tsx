@@ -8,11 +8,12 @@ import { DRAPE_STYLES, type DrapeStyle } from "@/lib/drape-styles";
 import { drapeSaree } from "@/server/drape-saree";
 import { toast } from "sonner";
 
-type Search = { saree?: string };
+type Search = { saree?: string; style?: string };
 
 export const Route = createFileRoute("/try-on")({
   validateSearch: (search: Record<string, unknown>): Search => ({
     saree: typeof search.saree === "string" ? search.saree : undefined,
+    style: typeof search.style === "string" ? search.style : undefined,
   }),
   head: () => ({
     meta: [
@@ -55,7 +56,9 @@ function TryOnPage() {
     search.saree ? SAREES.find((s) => s.id === search.saree) ?? null : null,
   );
   const [customSaree, setCustomSaree] = useState<string | null>(null);
-  const [drapeStyle, setDrapeStyle] = useState<DrapeStyle>(DRAPE_STYLES[0]);
+  const [drapeStyle, setDrapeStyle] = useState<DrapeStyle>(
+    (search.style && DRAPE_STYLES.find((d) => d.id === search.style)) || DRAPE_STYLES[0],
+  );
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const userInputRef = useRef<HTMLInputElement>(null);
