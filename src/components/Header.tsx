@@ -33,6 +33,13 @@ export function Header() {
             Collection
           </Link>
           <Link
+            to="/tutorials"
+            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            activeProps={{ className: "text-primary" }}
+          >
+            Tutorials
+          </Link>
+          <Link
             to="/try-on"
             className="hidden sm:inline-flex items-center justify-center rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-soft hover:opacity-95 transition-opacity"
           >
