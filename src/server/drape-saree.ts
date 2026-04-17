@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 
 type DrapeInput = {
-  userImage: string; // data URL or https URL
-  sareeImage: string; // data URL or https URL
+  userImage: string;
+  sareeImage: string;
+  styleHint?: string;
   notes?: string;
 };
 
@@ -23,13 +24,19 @@ export const drapeSaree = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("AI service not configured");
 
+    const styleHint =
+      data.styleHint ??
+      "Drape in the classic Nivi style: neat pleats tucked at the waist, pallu over the LEFT shoulder.";
+
     const prompt =
-      "Take the person from the first image and dress them in a saree made from the fabric/design shown in the second image. " +
-      "Drape the saree realistically in classic Indian Nivi style: pleats neatly tucked at the waist, the pallu draped over the left shoulder, " +
-      "the fabric flowing naturally around the body. Match the colors, motifs, border, and texture of the saree fabric exactly from the second image. " +
-      "Include a matching blouse. Keep the person's face, body, hair, skin tone and pose unchanged. " +
-      "Match the lighting, shadows and background of the original photo of the person. Photorealistic, high resolution, full body if possible." +
-      (data.notes ? ` Additional style notes: ${data.notes}` : "");
+      "Take the person from the FIRST image and dress them in a saree made from the fabric/design shown in the SECOND image. " +
+      styleHint + " " +
+      "Match the colors, motifs, border, and texture of the saree fabric exactly from the second image. " +
+      "Include a matching blouse appropriate for the style. " +
+      "Keep the person's face, body, hair, skin tone and pose unchanged. " +
+      "Match the lighting, shadows and background of the original photo. " +
+      "Photorealistic, high resolution, full body if possible." +
+      (data.notes ? ` Additional notes: ${data.notes}` : "");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
